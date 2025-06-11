@@ -9,7 +9,8 @@ class TimezoneConverter {
     initializeElements() {
         this.dateInput = document.getElementById('date');
         this.timeInput = document.getElementById('time');
-        this.timezoneSelect = document.getElementById('timezone');
+        this.fromTimezoneSelect = document.getElementById('from-timezone');
+        this.toTimezoneSelect = document.getElementById('to-timezone');
         this.resultTime = document.getElementById('result-time');
         this.resultDate = document.getElementById('result-date');
         this.resultTimezone = document.getElementById('result-timezone');
@@ -17,12 +18,17 @@ class TimezoneConverter {
         this.nowBtn = document.getElementById('now-btn');
         this.tomorrowBtn = document.getElementById('tomorrow-btn');
         this.nextWeekBtn = document.getElementById('next-week-btn');
+        
+        // Set default values (Israel -> PST as requested)
+        this.fromTimezoneSelect.value = 'Asia/Jerusalem';
+        this.toTimezoneSelect.value = 'America/Los_Angeles';
     }
 
     setupEventListeners() {
         this.dateInput.addEventListener('change', () => this.updateConversion());
         this.timeInput.addEventListener('change', () => this.updateConversion());
-        this.timezoneSelect.addEventListener('change', () => this.updateConversion());
+        this.fromTimezoneSelect.addEventListener('change', () => this.updateConversion());
+        this.toTimezoneSelect.addEventListener('change', () => this.updateConversion());
         
         this.nowBtn.addEventListener('click', () => this.setCurrentDateTime());
         this.tomorrowBtn.addEventListener('click', () => this.setTomorrowDateTime());
@@ -60,59 +66,65 @@ class TimezoneConverter {
         return date.toTimeString().slice(0, 5);
     }
 
+    getTimezoneDisplayName(timezone) {
+        const timezoneNames = {
+            'Asia/Jerusalem': 'Israel (Jerusalem)',
+            'America/Los_Angeles': 'PST (California)',
+            'America/New_York': 'EST (New York)',
+            'Europe/London': 'GMT (London)',
+            'Europe/Paris': 'CET (Paris)',
+            'Europe/Berlin': 'CET (Berlin)',
+            'Asia/Tokyo': 'JST (Tokyo)',
+            'Asia/Shanghai': 'CST (Shanghai)',
+            'Asia/Dubai': 'GST (Dubai)',
+            'Australia/Sydney': 'AEDT (Sydney)',
+            'America/Chicago': 'CST (Chicago)',
+            'America/Denver': 'MST (Denver)',
+            'UTC': 'UTC'
+        };
+        return timezoneNames[timezone] || timezone;
+    }
+
     updateConversion() {
         if (!this.dateInput.value || !this.timeInput.value) {
             this.resultTime.textContent = '--:--';
             this.resultDate.textContent = 'Select date and time';
             this.resultTimezone.textContent = '--';
+            this.resultTitle.textContent = 'Converted Time';
             return;
         }
 
         const inputDateTime = new Date(`${this.dateInput.value}T${this.timeInput.value}`);
-        const isFromIsrael = this.timezoneSelect.value === 'israel';
+        const fromTimezone = this.fromTimezoneSelect.value;
+        const toTimezone = this.toTimezoneSelect.value;
 
-        let convertedDate;
-        if (isFromIsrael) {
-            // Convert from Israel to PST
-            convertedDate = this.convertFromIsraelToPST(inputDateTime);
-            this.resultTitle.textContent = 'Time in PST (California)';
-        } else {
-            // Convert from PST to Israel
-            convertedDate = this.convertFromPSTToIsrael(inputDateTime);
-            this.resultTitle.textContent = 'Time in Israel (Jerusalem)';
-        }
+        // Convert timezone
+        const convertedDate = this.convertTimezone(inputDateTime, fromTimezone, toTimezone);
+        
+        // Update result title
+        const fromName = this.getTimezoneDisplayName(fromTimezone);
+        const toName = this.getTimezoneDisplayName(toTimezone);
+        this.resultTitle.textContent = `${toName}`;
 
-        this.displayResult(convertedDate, isFromIsrael);
+        this.displayResult(convertedDate, toTimezone, inputDateTime);
     }
 
-    convertFromIsraelToPST(israelTime) {
-        // Israel is UTC+2 (standard) or UTC+3 (daylight saving)
-        // PST is UTC-8, PDT is UTC-7
+    convertTimezone(inputDate, fromTimezone, toTimezone) {
+        // Create a date object that represents the input time in the source timezone
+        const sourceDate = new Date(inputDate.toLocaleString('en-US', { timeZone: fromTimezone }));
+        const sourceOffset = inputDate.getTime() - sourceDate.getTime();
         
-        // Create date in Israel timezone
-        const israelDate = new Date(israelTime.toLocaleString("en-US", {timeZone: "Asia/Jerusalem"}));
-        const israelOffset = israelTime.getTime() - israelDate.getTime();
-        const israelUTC = new Date(israelTime.getTime() + israelOffset);
+        // Create UTC time by adding the offset
+        const utcTime = new Date(inputDate.getTime() + sourceOffset);
         
-        // Convert to PST/PDT
-        const pstDate = new Date(israelUTC.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
-        return pstDate;
+        // Convert to target timezone
+        const targetDate = new Date(utcTime.toLocaleString('en-US', { timeZone: toTimezone }));
+        const targetOffset = utcTime.getTime() - targetDate.getTime();
+        
+        return new Date(utcTime.getTime() + targetOffset);
     }
 
-    convertFromPSTToIsrael(pstTime) {
-        // Create date in PST timezone
-        const pstDate = new Date(pstTime.toLocaleString("en-US", {timeZone: "America/Los_Angeles"}));
-        const pstOffset = pstTime.getTime() - pstDate.getTime();
-        const pstUTC = new Date(pstTime.getTime() + pstOffset);
-        
-        // Convert to Israel time
-        const israelDate = new Date(pstUTC.toLocaleString("en-US", {timeZone: "Asia/Jerusalem"}));
-        return israelDate;
-    }
-
-    displayResult(date, isFromIsrael) {
-        const targetTimezone = isFromIsrael ? "America/Los_Angeles" : "Asia/Jerusalem";
-        
+    displayResult(date, targetTimezone, originalDate) {
         // Format time
         const timeOptions = {
             timeZone: targetTimezone,
@@ -133,7 +145,7 @@ class TimezoneConverter {
         const formattedTime = new Intl.DateTimeFormat('en-US', timeOptions).format(date);
         const formattedDate = new Intl.DateTimeFormat('en-US', dateOptions).format(date);
         
-        // Get timezone name
+        // Get timezone abbreviation
         const timezoneOptions = {
             timeZone: targetTimezone,
             timeZoneName: 'short'
@@ -145,9 +157,10 @@ class TimezoneConverter {
         this.resultDate.textContent = formattedDate;
         this.resultTimezone.textContent = timezoneName;
 
-        // Add day difference indicator
-        const inputDate = new Date(`${this.dateInput.value}T${this.timeInput.value}`);
-        const dayDiff = Math.floor((date.getTime() - inputDate.getTime()) / (1000 * 60 * 60 * 24));
+        // Calculate and display day difference
+        const inputDateOnly = new Date(originalDate.getFullYear(), originalDate.getMonth(), originalDate.getDate());
+        const resultDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const dayDiff = Math.round((resultDateOnly.getTime() - inputDateOnly.getTime()) / (1000 * 60 * 60 * 24));
         
         if (dayDiff === 1) {
             this.resultDate.textContent += ' (Next Day)';
@@ -156,7 +169,7 @@ class TimezoneConverter {
         } else if (dayDiff > 1) {
             this.resultDate.textContent += ` (+${dayDiff} days)`;
         } else if (dayDiff < -1) {
-            this.resultDate.textContent += ` (${dayDiff} days)`;
+            this.resultDate.textContent += ` (${Math.abs(dayDiff)} days ago)`;
         }
     }
 }
