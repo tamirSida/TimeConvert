@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Israel ↔ PST Time Converter</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🕐 Israel ↔ PST</h1>
+            <p>Quick timezone converter for Jerusalem ↔ California</p>
+        </header>
+
+        <main>
+            <div class="converter-card">
+                <div class="input-section">
+                    <div class="date-input">
+                        <label for="date">Date:</label>
+                        <input type="date" id="date" name="date">
+                    </div>
+                    
+                    <div class="time-input">
+                        <label for="time">Time:</label>
+                        <input type="time" id="time" name="time">
+                    </div>
+                    
+                    <div class="timezone-toggle">
+                        <label for="timezone">From:</label>
+                        <select id="timezone" name="timezone">
+                            <option value="israel">Israel (Jerusalem)</option>
+                            <option value="pst">PST (California)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="result-card">
+                        <h3 id="result-title">Converted Time</h3>
+                        <div class="result-time" id="result-time">--:--</div>
+                        <div class="result-date" id="result-date">Select date and time</div>
+                        <div class="result-timezone" id="result-timezone">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <button id="now-btn" class="quick-btn">Now</button>
+                <button id="tomorrow-btn" class="quick-btn">Tomorrow</button>
+                <button id="next-week-btn" class="quick-btn">Next Week</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
