@@ -109,8 +109,56 @@ header p i {
     margin-bottom: 2rem;
 }
 
-.date-input, .time-input, .timezone-from, .timezone-to {
+.date-input, .time-input, .timezone-direction {
     margin-bottom: 1rem;
+}
+
+.timezone-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 12px;
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.from-zone, .to-zone {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.95rem;
+    flex: 1;
+    text-align: center;
+}
+
+.swap-btn {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.swap-btn:hover {
+    transform: rotate(180deg) scale(1.1);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.swap-btn:active {
+    transform: rotate(180deg) scale(0.95);
+}
+
+.swap-btn i {
+    font-size: 1rem;
 }
 
 .conversion-arrow {

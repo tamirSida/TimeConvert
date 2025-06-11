@@ -9,8 +9,9 @@ class TimezoneConverter {
     initializeElements() {
         this.dateInput = document.getElementById('date');
         this.timeInput = document.getElementById('time');
-        this.fromTimezoneSelect = document.getElementById('from-timezone');
-        this.toTimezoneSelect = document.getElementById('to-timezone');
+        this.fromZoneDisplay = document.getElementById('from-zone');
+        this.toZoneDisplay = document.getElementById('to-zone');
+        this.swapBtn = document.getElementById('swap-btn');
         this.resultTime = document.getElementById('result-time');
         this.resultDate = document.getElementById('result-date');
         this.resultTimezone = document.getElementById('result-timezone');
@@ -19,20 +20,35 @@ class TimezoneConverter {
         this.tomorrowBtn = document.getElementById('tomorrow-btn');
         this.nextWeekBtn = document.getElementById('next-week-btn');
         
-        // Set default values (Israel -> PST as requested)
-        this.fromTimezoneSelect.value = 'israel';
-        this.toTimezoneSelect.value = 'pst';
+        // Set default direction (Israel -> PST)
+        this.isIsraelToPst = true;
+        this.updateTimezoneDisplay();
     }
 
     setupEventListeners() {
         this.dateInput.addEventListener('change', () => this.updateConversion());
         this.timeInput.addEventListener('change', () => this.updateConversion());
-        this.fromTimezoneSelect.addEventListener('change', () => this.updateConversion());
-        this.toTimezoneSelect.addEventListener('change', () => this.updateConversion());
+        this.swapBtn.addEventListener('click', () => this.swapTimezones());
         
         this.nowBtn.addEventListener('click', () => this.setCurrentDateTime());
         this.tomorrowBtn.addEventListener('click', () => this.setTomorrowDateTime());
         this.nextWeekBtn.addEventListener('click', () => this.setNextWeekDateTime());
+    }
+
+    swapTimezones() {
+        this.isIsraelToPst = !this.isIsraelToPst;
+        this.updateTimezoneDisplay();
+        this.updateConversion();
+    }
+
+    updateTimezoneDisplay() {
+        if (this.isIsraelToPst) {
+            this.fromZoneDisplay.textContent = 'Israel';
+            this.toZoneDisplay.textContent = 'PST (California)';
+        } else {
+            this.fromZoneDisplay.textContent = 'PST (California)';
+            this.toZoneDisplay.textContent = 'Israel (Jerusalem)';
+        }
     }
 
     setCurrentDateTime() {
@@ -75,17 +91,14 @@ class TimezoneConverter {
             return;
         }
 
-        const fromTimezone = this.fromTimezoneSelect.value;
-        const toTimezone = this.toTimezoneSelect.value;
-
         // Update result title
-        const toName = toTimezone === 'israel' ? 'Israel (Jerusalem)' : 'PST (California)';
+        const toName = this.isIsraelToPst ? 'PST (California)' : 'Israel (Jerusalem)';
         this.resultTitle.textContent = toName;
 
-        this.convertTime(fromTimezone, toTimezone);
+        this.convertTime();
     }
 
-    convertTime(fromTimezone, toTimezone) {
+    convertTime() {
         // Create date from input
         const inputDateTime = `${this.dateInput.value}T${this.timeInput.value}:00`;
         const inputDate = new Date(inputDateTime);
@@ -93,15 +106,12 @@ class TimezoneConverter {
         let resultDate;
         
         // Simple conversion logic: Israel is 10 hours ahead of PST
-        if (fromTimezone === 'israel' && toTimezone === 'pst') {
+        if (this.isIsraelToPst) {
             // Israel to PST: subtract 10 hours
             resultDate = new Date(inputDate.getTime() - (10 * 60 * 60 * 1000));
-        } else if (fromTimezone === 'pst' && toTimezone === 'israel') {
+        } else {
             // PST to Israel: add 10 hours
             resultDate = new Date(inputDate.getTime() + (10 * 60 * 60 * 1000));
-        } else {
-            // Same timezone, no conversion needed
-            resultDate = new Date(inputDate.getTime());
         }
 
         // Format time (24-hour format)
@@ -119,7 +129,7 @@ class TimezoneConverter {
         const dateStr = resultDate.toLocaleDateString('en-US', options);
 
         // Set timezone abbreviation
-        const timezoneStr = toTimezone === 'israel' ? 'IST' : 'PST';
+        const timezoneStr = this.isIsraelToPst ? 'PST' : 'IST';
 
         // Display results
         this.resultTime.textContent = timeStr;

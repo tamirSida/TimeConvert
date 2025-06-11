@@ -30,20 +30,14 @@
                         <input type="time" id="time" name="time">
                     </div>
                     
-                    <div class="timezone-from">
-                        <label for="from-timezone"><i class="fas fa-globe-americas"></i> From:</label>
-                        <select id="from-timezone" name="from-timezone">
-                            <option value="israel">Israel (Jerusalem)</option>
-                            <option value="pst">PST (California)</option>
-                        </select>
-                    </div>
-                    
-                    <div class="timezone-to">
-                        <label for="to-timezone"><i class="fas fa-globe"></i> To:</label>
-                        <select id="to-timezone" name="to-timezone">
-                            <option value="pst">PST (California)</option>
-                            <option value="israel">Israel (Jerusalem)</option>
-                        </select>
+                    <div class="timezone-direction">
+                        <div class="timezone-display">
+                            <span class="from-zone" id="from-zone">Israel (Jerusalem)</span>
+                            <button id="swap-btn" class="swap-btn">
+                                <i class="fas fa-exchange-alt"></i>
+                            </button>
+                            <span class="to-zone" id="to-zone">PST (California)</span>
+                        </div>
                     </div>
                 </div>
 
