@@ -94,82 +94,113 @@ class TimezoneConverter {
             return;
         }
 
-        const inputDateTime = new Date(`${this.dateInput.value}T${this.timeInput.value}`);
         const fromTimezone = this.fromTimezoneSelect.value;
         const toTimezone = this.toTimezoneSelect.value;
 
-        // Convert timezone
-        const convertedDate = this.convertTimezone(inputDateTime, fromTimezone, toTimezone);
+        // Convert timezone using a more iPhone-compatible method
+        const convertedDate = this.convertTimezone(fromTimezone, toTimezone);
         
         // Update result title
-        const fromName = this.getTimezoneDisplayName(fromTimezone);
         const toName = this.getTimezoneDisplayName(toTimezone);
         this.resultTitle.textContent = `${toName}`;
 
-        this.displayResult(convertedDate, toTimezone, inputDateTime);
+        this.displayResult(convertedDate, toTimezone);
     }
 
-    convertTimezone(inputDate, fromTimezone, toTimezone) {
-        // Create a date object that represents the input time in the source timezone
-        const sourceDate = new Date(inputDate.toLocaleString('en-US', { timeZone: fromTimezone }));
-        const sourceOffset = inputDate.getTime() - sourceDate.getTime();
-        
-        // Create UTC time by adding the offset
-        const utcTime = new Date(inputDate.getTime() + sourceOffset);
-        
-        // Convert to target timezone
-        const targetDate = new Date(utcTime.toLocaleString('en-US', { timeZone: toTimezone }));
-        const targetOffset = utcTime.getTime() - targetDate.getTime();
-        
-        return new Date(utcTime.getTime() + targetOffset);
+    convertTimezone(fromTimezone, toTimezone) {
+        try {
+            // Create date string in a format that works well on all browsers
+            const dateTimeString = `${this.dateInput.value} ${this.timeInput.value}:00`;
+            
+            // Use a more direct approach that works better on Safari/iPhone
+            const inputDate = new Date(dateTimeString);
+            
+            // Create the same moment in time but interpreted in different timezones
+            const tempDate = new Date('2023-07-15T12:00:00Z'); // Fixed UTC reference
+            
+            // Get current time in both timezones for offset calculation
+            const fromTime = new Intl.DateTimeFormat('sv-SE', {
+                timeZone: fromTimezone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(tempDate);
+            
+            const toTime = new Intl.DateTimeFormat('sv-SE', {
+                timeZone: toTimezone,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            }).format(tempDate);
+            
+            const fromDateObj = new Date(fromTime);
+            const toDateObj = new Date(toTime);
+            const offsetMs = fromDateObj.getTime() - toDateObj.getTime();
+            
+            // Apply offset to input time
+            return new Date(inputDate.getTime() - offsetMs);
+            
+        } catch (error) {
+            console.error('Conversion error:', error);
+            // Ultra-simple fallback
+            return new Date(`${this.dateInput.value}T${this.timeInput.value}`);
+        }
     }
 
-    displayResult(date, targetTimezone, originalDate) {
-        // Format time
-        const timeOptions = {
-            timeZone: targetTimezone,
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        };
-        
-        // Format date
-        const dateOptions = {
-            timeZone: targetTimezone,
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        };
+    displayResult(date, targetTimezone) {
+        try {
+            // Use Intl.DateTimeFormat for better cross-browser compatibility
+            const timeStr = new Intl.DateTimeFormat('en-US', {
+                timeZone: targetTimezone,
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            }).format(date);
 
-        const formattedTime = new Intl.DateTimeFormat('en-US', timeOptions).format(date);
-        const formattedDate = new Intl.DateTimeFormat('en-US', dateOptions).format(date);
-        
-        // Get timezone abbreviation
-        const timezoneOptions = {
-            timeZone: targetTimezone,
-            timeZoneName: 'short'
-        };
-        const timezoneInfo = new Intl.DateTimeFormat('en-US', timezoneOptions).format(date);
-        const timezoneName = timezoneInfo.split(', ').pop();
+            const dateStr = new Intl.DateTimeFormat('en-US', {
+                timeZone: targetTimezone,
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }).format(date);
 
-        this.resultTime.textContent = formattedTime;
-        this.resultDate.textContent = formattedDate;
-        this.resultTimezone.textContent = timezoneName;
+            // Get timezone abbreviation
+            const timeZoneStr = new Intl.DateTimeFormat('en-US', {
+                timeZone: targetTimezone,
+                timeZoneName: 'short'
+            }).format(date).split(', ').pop();
 
-        // Calculate and display day difference
-        const inputDateOnly = new Date(originalDate.getFullYear(), originalDate.getMonth(), originalDate.getDate());
-        const resultDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const dayDiff = Math.round((resultDateOnly.getTime() - inputDateOnly.getTime()) / (1000 * 60 * 60 * 24));
-        
-        if (dayDiff === 1) {
-            this.resultDate.textContent += ' (Next Day)';
-        } else if (dayDiff === -1) {
-            this.resultDate.textContent += ' (Previous Day)';
-        } else if (dayDiff > 1) {
-            this.resultDate.textContent += ` (+${dayDiff} days)`;
-        } else if (dayDiff < -1) {
-            this.resultDate.textContent += ` (${Math.abs(dayDiff)} days ago)`;
+            this.resultTime.textContent = timeStr;
+            this.resultDate.textContent = dateStr;
+            this.resultTimezone.textContent = timeZoneStr;
+
+            // Calculate day difference
+            const inputDate = new Date(`${this.dateInput.value}T${this.timeInput.value}`);
+            const resultDateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            const inputDateOnly = new Date(inputDate.getFullYear(), inputDate.getMonth(), inputDate.getDate());
+            
+            const dayDiff = Math.round((resultDateOnly.getTime() - inputDateOnly.getTime()) / (1000 * 60 * 60 * 24));
+            
+            if (dayDiff === 1) {
+                this.resultDate.textContent += ' (Next Day)';
+            } else if (dayDiff === -1) {
+                this.resultDate.textContent += ' (Previous Day)';
+            } else if (dayDiff > 1) {
+                this.resultDate.textContent += ` (+${dayDiff} days)`;
+            } else if (dayDiff < -1) {
+                this.resultDate.textContent += ` (${Math.abs(dayDiff)} days ago)`;
+            }
+
+        } catch (error) {
+            console.error('Display error:', error);
+            this.resultTime.textContent = 'Error';
+            this.resultDate.textContent = 'Conversion failed';
+            this.resultTimezone.textContent = '--';
         }
     }
 }
